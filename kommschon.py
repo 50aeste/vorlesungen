@@ -179,7 +179,13 @@ def generate_ics(selected_events, semester_start, semester_end, holiday_weeks):
 
 # --- MAIN UI ---
 
-st.title("🎓 Vorlesungs-Planer")
+st.title("Vorlesungs-Planer")
+
+# Initialize session state for dates if not already present
+if 'sem_start_date' not in st.session_state:
+    st.session_state['sem_start_date'] = datetime.now()
+if 'sem_end_date' not in st.session_state:
+    st.session_state['sem_end_date'] = datetime.now() + timedelta(weeks=16)
 
 # 1. SETUP
 with st.sidebar:
@@ -188,8 +194,8 @@ with st.sidebar:
     
     default_start = datetime.now()
     default_end = default_start + timedelta(weeks=16)
-    sem_start = st.date_input("Semester Start", value=default_start)
-    sem_end = st.date_input("Semester Ende", value=default_end)
+    sem_start = st.date_input("Semester Start", key='sem_start_date')
+    sem_end = st.date_input("Semester Ende", key='sem_end_date')
 
 if not uploaded_file:
     st.info("Bitte PDF hochladen.")
@@ -206,6 +212,17 @@ if 'all_events' not in st.session_state or st.session_state.get('last_file') != 
         st.session_state['all_events'] = events
         st.session_state['last_file'] = uploaded_file.name
         st.session_state['holidays'] = detect_holiday_weeks(events, sem_start, sem_end)
+        # ... inside the "with st.spinner..." block
+        st.session_state['holidays'] = detect_holiday_weeks(events, sem_start, sem_end)
+        
+        # Update the dates based on what we found in the PDF
+        # (You can use the 'detect_holiday_weeks' logic to find bounds, 
+        # or just find the min/max dates in 'events' here)
+        all_dates = [datetime.strptime(e['date'], '%d.%m.%Y') for e in events if e['date']]
+        if all_dates:
+            st.session_state['sem_start_date'] = min(all_dates)
+            st.session_state['sem_end_date'] = max(all_dates)
+            st.rerun() # Forces the page to reload with the new dates immediately
 
 all_events = st.session_state['all_events']
 holidays = st.session_state['holidays']
@@ -283,6 +300,25 @@ if query:
 if final_events_to_process:
     st.divider()
     st.subheader("Vorschau")
+
+    # --- FIX START: Deduplicate Events ---
+    # We create a unique signature for every event (ID + Title + Day + Time)
+    # This removes duplicates even if the parser found the same line twice.
+    unique_events = []
+    seen_signatures = set()
+    
+    for e in final_events_to_process:
+        # Create a signature string
+        sig = f"{e['id']}|{e['title']}|{e['weekday']}|{e['start_time']}|{e['date']}"
+        
+        if sig not in seen_signatures:
+            seen_signatures.add(sig)
+            unique_events.append(e)
+            
+    final_events_to_process = unique_events
+    # --- FIX END ---
+
+    # ... existing preview code continues below ...
     
     # Simple list of Unique Titles (as requested)
     unique_titles = sorted(list(set([e['full_label'] for e in final_events_to_process])))
