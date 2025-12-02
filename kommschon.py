@@ -179,21 +179,48 @@ def generate_ics(selected_events, semester_start, semester_end, holiday_weeks):
 
 # --- MAIN UI ---
 
-st.title("Vorlesungs-Planer")
+# --- MAIN UI ---
 
-# Initialize session state for dates if not already present
+st.title("🎓 Vorlesungs-Planer")
+
+# 1. INITIALIZE DATES (Default to today if nothing loaded)
 if 'sem_start_date' not in st.session_state:
     st.session_state['sem_start_date'] = datetime.now()
 if 'sem_end_date' not in st.session_state:
     st.session_state['sem_end_date'] = datetime.now() + timedelta(weeks=16)
 
-# 1. SETUP
+# 2. SIDEBAR & PARSING LOGIC
 with st.sidebar:
     st.header("Einstellungen")
     uploaded_file = st.file_uploader("PDF Upload", type="pdf")
     
-    default_start = datetime.now()
-    default_end = default_start + timedelta(weeks=16)
+    # --- LOGIC CHANGE: Parse PDF *HERE* before rendering date widgets ---
+    if uploaded_file:
+        # Only parse if it's a new file
+        if st.session_state.get('last_file') != uploaded_file.name:
+            with st.spinner("Analysiere PDF..."):
+                text = ""
+                with pdfplumber.open(uploaded_file) as pdf:
+                    for page in pdf.pages: text += page.extract_text() + "\n"
+                
+                events = extract_events(text)
+                st.session_state['all_events'] = events
+                st.session_state['last_file'] = uploaded_file.name
+                
+                # AUTO-DETECT START & END FROM EVENTS
+                found_dates = []
+                for e in events:
+                    if e['date']:
+                        try:
+                            dt = datetime.strptime(e['date'], '%d.%m.%Y')
+                            found_dates.append(dt)
+                        except ValueError: pass
+                
+                if found_dates:
+                    st.session_state['sem_start_date'] = min(found_dates)
+                    st.session_state['sem_end_date'] = max(found_dates)
+
+    # --- Now render the widgets (they will read the updated session state) ---
     sem_start = st.date_input("Semester Start", key='sem_start_date')
     sem_end = st.date_input("Semester Ende", key='sem_end_date')
 
@@ -201,31 +228,9 @@ if not uploaded_file:
     st.info("Bitte PDF hochladen.")
     st.stop()
 
-# 2. PARSE (Once)
-if 'all_events' not in st.session_state or st.session_state.get('last_file') != uploaded_file.name:
-    with st.spinner("Lese PDF..."):
-        text = ""
-        with pdfplumber.open(uploaded_file) as pdf:
-            for page in pdf.pages: text += page.extract_text() + "\n"
-        
-        events = extract_events(text)
-        st.session_state['all_events'] = events
-        st.session_state['last_file'] = uploaded_file.name
-        st.session_state['holidays'] = detect_holiday_weeks(events, sem_start, sem_end)
-        # ... inside the "with st.spinner..." block
-        st.session_state['holidays'] = detect_holiday_weeks(events, sem_start, sem_end)
-        
-        # Update the dates based on what we found in the PDF
-        # (You can use the 'detect_holiday_weeks' logic to find bounds, 
-        # or just find the min/max dates in 'events' here)
-        all_dates = [datetime.strptime(e['date'], '%d.%m.%Y') for e in events if e['date']]
-        if all_dates:
-            st.session_state['sem_start_date'] = min(all_dates)
-            st.session_state['sem_end_date'] = max(all_dates)
-            st.rerun() # Forces the page to reload with the new dates immediately
-
+# Load data for the rest of the app
 all_events = st.session_state['all_events']
-holidays = st.session_state['holidays']
+holidays = detect_holiday_weeks(all_events, sem_start, sem_end)
 
 # 3. SEARCH & SELECT
 st.subheader("Modul-Suche")
