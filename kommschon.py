@@ -185,9 +185,9 @@ st.title("🎓 Vorlesungs-Planer")
 
 # 1. INITIALIZE DATES (Default to today if nothing loaded)
 if 'sem_start_date' not in st.session_state:
-    st.session_state['sem_start_date'] = datetime.now()
+    st.session_state['sem_start_date'] = "/"
 if 'sem_end_date' not in st.session_state:
-    st.session_state['sem_end_date'] = datetime.now() + timedelta(weeks=16)
+    st.session_state['sem_end_date'] = "/"
 
 # 2. SIDEBAR & PARSING LOGIC
 with st.sidebar:
