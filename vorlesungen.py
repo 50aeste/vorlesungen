@@ -226,8 +226,9 @@ if not uploaded_file:
     st.info("← Bitte PDF hochladen.")
 
 # Load data for the rest of the app
-all_events = st.session_state['all_events']
-holidays = detect_holiday_weeks(all_events, sem_start, sem_end)
+if 'key' not in st.session_state:
+    all_events = st.session_state['all_events']
+    holidays = detect_holiday_weeks(all_events, sem_start, sem_end)
 
 # 3. SEARCH & SELECT
 st.subheader("Module oder Vorlesungen auswählen")
