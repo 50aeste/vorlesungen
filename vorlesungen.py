@@ -228,6 +228,7 @@ if not uploaded_file:
 # Load data for the rest of the app
 if 'key' not in st.session_state:
     st.session_state['all_events'] = events
+    events = extract_events(text)
     all_events = st.session_state['all_events']
     holidays = detect_holiday_weeks(all_events, sem_start, sem_end)
 
