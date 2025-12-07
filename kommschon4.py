@@ -329,7 +329,14 @@ if final_events_to_process:
     final_events_to_process = unique_events
     # --- FIX END ---
     
-    # Anleitung für das Importieren
+    # ... existing preview code continues below ...
+    
+    # Simple list of Unique Titles
+    unique_titles = sorted(list(set([e['full_label'] for e in final_events_to_process])))
+    for item in unique_titles:
+        st.text(f"• {item}")
+
+        # Anleitung für das Importieren
     st.divider()
     st.write("""
         Diese Datei enthält alle Termine der ausgewählten Veranstaltungen. \n
@@ -338,13 +345,7 @@ if final_events_to_process:
         Für Google Kalendar: Einstellungen → Importieren & Exportieren → Datei von meinem Computer auswählen
     """)
 
-    # ... existing preview code continues below ...
-    
-    # Simple list of Unique Titles
-    unique_titles = sorted(list(set([e['full_label'] for e in final_events_to_process])))
-    for item in unique_titles:
-        st.text(f"• {item}")
-
+    st.divider()
     ics_data = generate_ics(final_events_to_process, sem_start, sem_end, holidays)
     
     st.download_button(
