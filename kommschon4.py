@@ -339,10 +339,10 @@ if final_events_to_process:
         # Anleitung für das Importieren
     st.divider()
     st.write("""
-        Diese Datei enthält alle Termine der ausgewählten Veranstaltungen. \n
+        Die Datei, die du über den roten Button unten herunterladen kannst, enthält alle Termine der ausgewählten Veranstaltungen. Darin enthalten sind Datum, Uhrzeit und Raumnummer. \n
         Du kannst sie in jede gängige Kalenderapp importieren. \n
         Für Apple Kalender: Ablage → Importieren → vorlesungen.ics auswählen. \n
-        Für Google Kalendar: Einstellungen → Importieren & Exportieren → Datei von meinem Computer auswählen
+        Für Google Kalendar: Einstellungen → Importieren & Exportieren → Datei von meinem Computer auswählen \n
     """)
 
     st.divider()
